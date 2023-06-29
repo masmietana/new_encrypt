@@ -24,6 +24,12 @@ def encrypt_message(message, key):
     encrypted_message = f.encrypt(message)
     return encrypted_message
 
+def decrypt_message(encrypted_message, key):
+    f = Fernet(key)
+    decrypted_message = f.decrypt(encrypted_message)
+    return decrypted_message
+
+
 
 def allowed_file(filename):
     return any(filename.lower().endswith(ext) for ext in app.config['ALLOWED_EXTENSIONS'])
@@ -53,7 +59,36 @@ def upload_file():
         with open('mySecret.txt', 'wb') as file:
             file.write(encrypted_message)
 
-        return encrypted_message
+        return "plik zaszyfrowany - mySecret.txt"
+
+    return "Invalid file format"
+
+@app.route('/d')
+def decrypt():
+    return render_template('decrypt.html')
+
+@app.route('/decrypt', methods=['POST'])
+def decrypt_file():
+    file = request.files['file']
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(file_path)
+
+        key = load_key()
+
+        with open(file_path, 'rb') as encrypted_file:
+            encrypted_message = encrypted_file.read()
+
+        decrypted_message = decrypt_message(encrypted_message, key)
+
+        
+        decrypted_file_path = os.path.splitext(file_path)[0] + '_decrypted.txt'
+        with open(decrypted_file_path, 'wb') as decrypted_file:
+            decrypted_file.write(decrypted_message)
+
+        return "plik odszyfrowany - mySecret_decrypted.txt"
+
 
     return "Invalid file format"
 
